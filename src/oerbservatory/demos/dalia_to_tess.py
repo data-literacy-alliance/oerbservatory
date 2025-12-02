@@ -2,11 +2,10 @@
 
 import json
 
+import pystow
 from dalia_dif.dif13 import EducationalResourceDIF13, read_dif13
 from dalia_dif.dif13.rdf import get_discipline_label
 from tess_downloader import LearningMaterial, TeSSClient, Topic
-from tess_downloader.api import PostLearningMaterial
-import pystow
 from tqdm import tqdm
 
 
