@@ -53,7 +53,7 @@ dependencies = [
     "click",
     "more_click",
     "typing-extensions",
-    "dalia-dif",
+    "dalia-dif>=0.0.16",
     "tess-downloader>=0.0.5",
     "pystow>=0.7.12",
     "pandas",

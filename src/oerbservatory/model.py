@@ -1,10 +1,15 @@
 """A data model for open educational resources."""
 
+from __future__ import annotations
+
 import datetime
 import sqlite3
+import time
 from collections.abc import Sequence
 from contextlib import closing
+from functools import lru_cache
 from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import numpy as np
@@ -18,6 +23,9 @@ from pydantic import UUID4, BaseModel, ByteSize, ConfigDict, Field
 from pydantic_extra_types.language_code import ISO639_3, LanguageAlpha2
 from rdflib import Literal, URIRef
 from tqdm import tqdm
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 __all__ = [
     "EN",
@@ -72,8 +80,9 @@ class EducationalResource(BaseModel):
         description="A key for the OER platform where this resource came from",
     )
     authors: list[Author | Organization] = Field(default_factory=list)
-    license: str | URIRef | None = None
-    external_uri: str | None | list[str] = None
+    license: str | URIRef | Reference | None = None
+    external_uri: str | None = None
+    external_uri_extras: list[str] | None = None
     title: InternationalizedStr
     supporting_community: list[Organization] = Field(default_factory=list)
     recommending_community: list[Organization] = Field(default_factory=list)
@@ -206,22 +215,36 @@ These can be used for downstream tasks like:
 """
 
 
+@lru_cache
+def get_sentence_transformer(
+    model: str = "distiluse-base-multilingual-cased",
+) -> SentenceTransformer:
+    """Get a sentence transformer."""
+    from sentence_transformers import SentenceTransformer
+
+    tqdm.write(f"loading sentence transformer: {model}")
+    start = time.time()
+    rv = SentenceTransformer(
+        model,
+        cache_folder=pystow.module("sentence-transformers").base.as_posix(),
+    )
+    tqdm.write(f"loaded {model} in {time.time() - start:.2f} seconds")
+    return rv
+
+
 def write_resources_sentence_transformer(
     resources: list[EducationalResource],
     vectors_path: Path,
     similarity_path: Path,
     *,
     similarity_cutoff: float | None = None,
+    sentence_transformer: SentenceTransformer | None = None,
 ) -> None:
     """Create a vector index with :mod:`sentence_transformers`."""
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(
-        "distiluse-base-multilingual-cased",
-        cache_folder=pystow.module("sentence-transformers").base.as_posix(),
-    )
+    if sentence_transformer is None:
+        sentence_transformer = get_sentence_transformer()
     corpus = [_get_document(resource) for resource in resources]
-    vectors = model.encode(corpus, show_progress_bar=True)
+    vectors = sentence_transformer.encode(corpus, show_progress_bar=True)
     _xxx(
         vectors=vectors,
         resources=resources,
@@ -276,7 +299,9 @@ def _xxx(
     df2.to_csv(similarities_path, sep="\t", index=False)
 
 
-def write_sqlite_fti(resources: list[EducationalResource], path: Path) -> None:
+def write_sqlite_fti(
+    resources: list[EducationalResource], path: Path, *, loud: bool = False
+) -> None:
     """Write a SQLite database with a full text index."""
     from dalia_dif.dif13.export.fti import _dif13_df_to_sqlite
 
@@ -297,22 +322,23 @@ def write_sqlite_fti(resources: list[EducationalResource], path: Path) -> None:
         columns=["uuid", "title", "description", "keywords"],
     )
 
-    with closing(sqlite3.connect(path.as_posix())) as conn:
-        _dif13_df_to_sqlite(df, conn)
+    if loud:
+        with closing(sqlite3.connect(path.as_posix())) as conn:
+            _dif13_df_to_sqlite(df, conn)
 
-        with closing(conn.cursor()) as cursor:
-            # Test FTS query (e.g., search all fields for "python")
-            # note that the bm25 weights
-            query = """
-                SELECT uuid, title, bm25(documents, 0.0, 5.0, 1.0, 0.5)
-                FROM documents
-                WHERE documents MATCH 'chem*'
-                ORDER BY rank;
-            """
-            results = cursor.execute(query).fetchall()
-            # Show results
-            for row in results:
-                tqdm.write(str(row))
+            with closing(conn.cursor()) as cursor:
+                # Test FTS query (e.g., search all fields for "python")
+                # note that the bm25 weights
+                query = """
+                    SELECT uuid, title, bm25(documents, 0.0, 5.0, 1.0, 0.5)
+                    FROM documents
+                    WHERE documents MATCH 'chem*'
+                    ORDER BY rank;
+                """
+                results = cursor.execute(query).fetchall()
+                # Show results
+                for row in results:
+                    tqdm.write(str(row))
 
 
 def resolve_authors(

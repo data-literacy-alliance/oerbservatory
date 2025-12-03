@@ -6,30 +6,33 @@ from typing import Any, cast
 
 import click
 import pyobo
+import pystow
 import requests
+import ssslm
 from curies import Reference
+from dalia_dif.namespace import SPDX_LICENSE
 from dalia_dif.utils import cleanup_languages
 from rdflib import SDO, URIRef
 from tabulate import tabulate
 from tqdm import tqdm
 
 from oerbservatory.model import (
-    SPDX_LICENSE,
     EducationalResource,
     InternationalizedStr,
     resolve_authors,
     write_resources_jsonl,
 )
-from oerbservatory.utils import DALIA_MODULE
+from oerbservatory.sources.utils import OUTPUT_DIR
 
 __all__ = [
     "get_oerhub",
     "get_oerhub_raw",
 ]
 
-OERHUB_RAW_PATH = DALIA_MODULE.join(name="oerhub-raw.json")
-OERHUB_PROCESSED_PATH = DALIA_MODULE.join(name="oerhub.jsonl")
-OERHUB_TTL_PATH = DALIA_MODULE.join(name="oerhub.ttl")
+OERHUB_MODULE = pystow.module("oerbservatory", "sources", "oerhub")
+OERHUB_RAW_PATH = OERHUB_MODULE.join(name="oerhub-raw.json")
+OERHUB_PROCESSED_PATH = OERHUB_MODULE.join(name="oerhub.jsonl")
+OERHUB_TTL_PATH = OUTPUT_DIR.joinpath("oerhub.ttl")
 
 
 def get_oerhub_raw(*, force: bool = False) -> dict[str, Any]:
@@ -69,12 +72,13 @@ RESOURCE_TYPES = {
 }
 
 
-def get_oerhub() -> list[EducationalResource]:  # noqa:C901
+def get_oerhub(*, organization_grounder: ssslm.Grounder | None = None) -> list[EducationalResource]:  # noqa:C901
     """Get processed OERs from OERhub."""
     data = get_oerhub_raw()
     hits = data["data"]["hits"]["hits"]
 
-    ror_grounder = pyobo.get_grounder("ror")
+    if organization_grounder is None:
+        organization_grounder = pyobo.get_grounder("ror")
 
     mime_type_counter: Counter[str] = Counter()
     filetype_counter: Counter[str] = Counter()
@@ -158,7 +162,9 @@ def get_oerhub() -> list[EducationalResource]:  # noqa:C901
             keywords=keywords,
             description=description,
             languages=languages,
-            authors=resolve_authors(source.pop("oea_authors", []), ror_grounder=ror_grounder),
+            authors=resolve_authors(
+                source.pop("oea_authors", []), organization_grounder=organization_grounder
+            ),
             xrefs=[
                 # TODO register all to bioregistry!
                 Reference(prefix=x["catalog"], identifier=x["entry"])

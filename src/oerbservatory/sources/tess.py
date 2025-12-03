@@ -14,16 +14,17 @@ import ssslm
 import tess_downloader
 from curies import Reference
 from dalia_dif.namespace import BIBO, HCRT, MODALIA
-from rdflib import SDO, Namespace, URIRef
+from rdflib import SDO, URIRef
 from tabulate import tabulate
 from tess_downloader import INSTANCES, DifficultyLevel, LearningMaterial, TeSSClient
 from tqdm import tqdm
 
 from oerbservatory.model import EN, Author, EducationalResource, Organization, resolve_authors
+from oerbservatory.sources.utils import TESS_TO_LICENSE
 
 __all__ = [
-    "get_all_tess",
     "get_single_tess",
+    "get_tess",
     "map_tess_oer",
 ]
 
@@ -122,16 +123,6 @@ DIFFICULTY_LEVEL_MAP: dict[DifficultyLevel, URIRef | None] = {
 
 unknown_resource_type: Counter[str] = Counter()
 
-LICENSE_ONT = Namespace("https://w3id.org/license-ontology/")
-REMAINING: dict[str, URIRef] = {
-    "notspecified": LICENSE_ONT["unspecified"],
-    "other-at": LICENSE_ONT["requires-attribution"],  # attribution
-    "other-closed": LICENSE_ONT["not-open"],  # not open
-    "other-open": LICENSE_ONT["open"],  # open
-    "other-nc": LICENSE_ONT["non-commercial"],  # not commercial
-    "other-pd": LICENSE_ONT["public-domain"],  # public domain
-}
-
 
 @lru_cache(1)
 def get_key_to_license_uri() -> dict[str, URIRef]:
@@ -139,8 +130,8 @@ def get_key_to_license_uri() -> dict[str, URIRef]:
     rv = {}
     records = OERBSERVATORY_MODULE.ensure_yaml(url=TESS_LICENSE_DICTIONARY_URL)
     for key, record in records.items():
-        if key in REMAINING:
-            rv[key] = REMAINING[key]
+        if key in TESS_TO_LICENSE:
+            rv[key] = TESS_TO_LICENSE[key]
         else:
             license_uri = record["reference"]
             if not license_uri.startswith("https://spdx.org") or not license_uri.endswith(".html"):
@@ -222,7 +213,7 @@ def get_single_tess(
     try:
         materials = client.get_materials()
     except ValueError as e:
-        tqdm.write(f"[{client.key}] failed: {e}")
+        tqdm.write(f"[tess.{client.key}] failed: {e}")
         raise
 
     rv = [
@@ -234,7 +225,7 @@ def get_single_tess(
             )
         )
     ]
-    tqdm.write(f"[{client.key}] created {len(rv):,} records")
+    tqdm.write(f"[tess.{client.key}] created {len(rv):,} records")
     return rv
 
 
@@ -244,7 +235,7 @@ def _get_license(attributes: LearningMaterial) -> URIRef | str | None:
     return get_key_to_license_uri()[attributes.license]
 
 
-def get_all_tess(
+def get_tess(
     *,
     organization_grounder: ssslm.Grounder | None = None,
 ) -> list[EducationalResource]:
@@ -252,7 +243,7 @@ def get_all_tess(
     if organization_grounder is None:
         organization_grounder = pyobo.get_grounder("ror")
     resources = []
-    for key in tqdm(INSTANCES):
+    for key in tqdm(INSTANCES, unit="instance", desc="[tess] processing"):
         client = TeSSClient(key=key)
         resources.extend(
             get_single_tess(
@@ -267,7 +258,7 @@ def get_all_tess(
 def main() -> None:
     """Convert TeSS to DALIA."""
     organization_grounder = pyobo.get_grounder("ror")
-    get_all_tess(organization_grounder=organization_grounder)
+    get_tess(organization_grounder=organization_grounder)
     click.echo(tabulate(unknown_resource_type.most_common()))
 
 
