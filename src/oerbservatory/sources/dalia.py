@@ -12,9 +12,6 @@ from dalia_dif.dif13 import (
     OrganizationDIF13,
     parse_dif13_row,
 )
-from pydantic import ByteSize
-from tqdm import tqdm
-
 from dalia_ingest.model import (
     OUTPUT_DIR,
     Author,
@@ -25,7 +22,9 @@ from dalia_ingest.model import (
     write_resources_tfidf,
     write_sqlite_fti,
 )
-from dalia_ingest.utils import get_dif13_paths, DALIA_MODULE
+from dalia_ingest.utils import DALIA_MODULE, get_dif13_paths
+from pydantic import ByteSize
+from tqdm import tqdm
 
 __all__ = [
     "get_dalia",
@@ -109,6 +108,8 @@ def _process_author(e: AuthorDIF13 | OrganizationDIF13) -> Author | Organization
                 ror=e.ror,
                 wikidata=e.wikidata,
             )
+        case _:
+            raise TypeError
 
 
 def _omni_process_row(path: Path, idx: int, row: dict[str, str]) -> EducationalResource | None:

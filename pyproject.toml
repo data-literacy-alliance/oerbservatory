@@ -27,10 +27,9 @@ classifiers = [
     "Framework :: Sphinx",
     "Natural Language :: English",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
     "Typing :: Typed",
     # TODO add your topics from the Trove controlled vocabulary (see https://pypi.org/classifiers)
@@ -47,7 +46,7 @@ license-files = [
     "LICENSE",
 ]
 
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "more_itertools", # missing from itertools in stdlib
     "tqdm", # progress bars
@@ -80,7 +79,9 @@ typing = [
     "mypy",
     "pydantic",
     "click-types",
-    # You will probably have to add additional type stubs here, especially if you're using tox-uv
+    "types-requests",
+    "types-tabulate",
+    "orcid-downloader",
 ]
 docs-lint = [
     { include-group = "docs" },

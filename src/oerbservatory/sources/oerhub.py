@@ -2,17 +2,13 @@
 
 import json
 from collections import Counter
-from typing import Any
+from typing import Any, cast
 
 import click
 import pyobo
 import requests
 from curies import Reference
 from dalia_dif.utils import cleanup_languages
-from rdflib import SDO, URIRef
-from tabulate import tabulate
-from tqdm import tqdm
-
 from dalia_ingest.model import (
     SPDX_LICENSE,
     EducationalResource,
@@ -21,6 +17,9 @@ from dalia_ingest.model import (
     write_resources_jsonl,
 )
 from dalia_ingest.utils import DALIA_MODULE
+from rdflib import SDO, URIRef
+from tabulate import tabulate
+from tqdm import tqdm
 
 __all__ = [
     "get_oerhub",
@@ -35,7 +34,7 @@ OERHUB_TTL_PATH = DALIA_MODULE.join(name="oerhub.ttl")
 def get_oerhub_raw(*, force: bool = False) -> dict[str, Any]:
     """Get OERhub data."""
     if OERHUB_RAW_PATH.is_file() and not force:
-        return json.loads(OERHUB_RAW_PATH.read_text())
+        return cast(dict[str, Any], json.loads(OERHUB_RAW_PATH.read_text()))
 
     url = "https://oerhub.at/search"
     # there were 3143 on June 20, 2025
@@ -44,7 +43,7 @@ def get_oerhub_raw(*, force: bool = False) -> dict[str, Any]:
     data = res.json()
     with OERHUB_RAW_PATH.open("w") as file:
         json.dump(data, file, indent=2, ensure_ascii=False)
-    return data
+    return cast(dict[str, Any], data)
 
 
 LICENSES: dict[str, URIRef] = {
@@ -69,7 +68,7 @@ RESOURCE_TYPES = {
 }
 
 
-def get_oerhub() -> list[EducationalResource]:
+def get_oerhub() -> list[EducationalResource]:  # noqa:C901
     """Get processed OERs from OERhub."""
     data = get_oerhub_raw()
     hits = data["data"]["hits"]["hits"]
@@ -191,13 +190,13 @@ def get_oerhub() -> list[EducationalResource]:
     return resources
 
 
-def _echo_counter(c: Counter, title: str | None = None) -> None:
+def _echo_counter(c: Counter[str], title: str | None = None) -> None:
     if title:
         tqdm.write(title)
     tqdm.write(tabulate(c.most_common(), headers=["key", "count"]) + "\n\n")
 
 
-def _clean_d(d: dict[str, Any] | None) -> dict[str, str]:
+def _clean_d(d: dict[str, Any] | None) -> dict[str, str] | None:
     if d is None:
         return None
     if "en" in d and "en_us_wp" in d:

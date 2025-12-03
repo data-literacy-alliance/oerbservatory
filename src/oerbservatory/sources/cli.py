@@ -3,8 +3,6 @@
 from collections.abc import Callable
 
 import click
-from tqdm import tqdm
-
 from dalia_ingest.model import (
     EducationalResource,
     write_resources_jsonl,
@@ -13,6 +11,7 @@ from dalia_ingest.model import (
     write_sqlite_fti,
 )
 from dalia_ingest.utils import ROOT
+from tqdm import tqdm
 
 __all__ = ["main"]
 

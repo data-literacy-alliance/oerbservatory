@@ -1,25 +1,29 @@
-"""Ingest TeSS."""
+"""Ingest TeSS.
+
+See data dictionaries at https://github.com/ElixirTeSS/TeSS/tree/master/config/dictionaries.
+"""
 
 from collections import Counter
+from collections.abc import Sequence
 
 import click
 import pyobo
-import rdflib
+import pystow
 import ssslm
+import tess_downloader
 from dalia_dif.namespace import BIBO, HCRT, MODALIA, SPDX_LICENSE
-from rdflib import SDO, Namespace, URIRef
+from rdflib import SDO, URIRef
 from tabulate import tabulate
-from tess_downloader import INSTANCES, TeSSClient
+from tess_downloader import INSTANCES, DifficultyLevel, LearningMaterial, TeSSClient
 from tqdm import tqdm
 
-from dalia_ingest.model import (
+from oerbservatory.model import (
     Author,
     EducationalResource,
     Organization,
     resolve_authors,
     write_resources_jsonl,
 )
-from dalia_ingest.utils import DALIA_MODULE
 
 __all__ = [
     "get_elixir",
@@ -28,6 +32,7 @@ __all__ = [
     "get_tess",
 ]
 
+OERBSERVATORY_MODULE = pystow.module("oerbservatory")
 RESOURCE_TYPE_MAP: dict[str, URIRef | None] = {
     "video": SDO.VideoObject,
     "series of videos": SDO.VideoObject,
@@ -108,7 +113,7 @@ RESOURCE_TYPE_MAP: dict[str, URIRef | None] = {
     "life science literature database": None,
     "viralzone": None,
 }
-DIFFICULTY_LEVEL_MAP: dict[str, URIRef | None] = {
+DIFFICULTY_LEVEL_MAP: dict[DifficultyLevel, URIRef | None] = {
     "advanced": MODALIA["Expert"],
     "beginner": MODALIA["Beginner"],
     "intermediate": MODALIA["Competent"],
@@ -146,9 +151,9 @@ LICENSES: dict[str, URIRef] = {
 unknown_resource_type: Counter[str] = Counter()
 
 
-def _get_resource_types(attributes) -> list[URIRef]:
+def _get_resource_types(attributes: LearningMaterial) -> list[URIRef]:
     rv = []
-    for resource_type in attributes.get("resource-type", []):
+    for resource_type in attributes.resource_type or []:
         resource_type = resource_type.lower().strip()
         nn = RESOURCE_TYPE_MAP.get(resource_type)
         if nn:
@@ -160,28 +165,18 @@ def _get_resource_types(attributes) -> list[URIRef]:
     return rv
 
 
-unknown_difficulty = set()
+def _get_difficulty_levels(oer: tess_downloader.LearningMaterial) -> list[URIRef] | None:
+    if oer.difficult_level is None or oer.difficult_level == "notspecified":
+        return None
+    if difficult_level_uri := DIFFICULTY_LEVEL_MAP.get(oer.difficulty_level):
+        return [difficult_level_uri]
+    return None
 
 
-def _get_difficulty_levels(attributes) -> list[URIRef]:
-    difficulty_level = attributes.get("difficulty-level")
-    if not difficulty_level:
-        return []
-    difficulty_level = difficulty_level.lower().strip()
-    if difficulty_level == "notspecified":
-        return []
-
-    xx = DIFFICULTY_LEVEL_MAP.get(difficulty_level)
-    if xx:
-        return [xx]
-    if difficulty_level not in unknown_difficulty:
-        unknown_difficulty.add(difficulty_level)
-        tqdm.write(click.style(f"unmappable difficulty-level: {difficulty_level}", fg="red"))
-    return []
-
-
-def _get_authors(attributes, ror_grounder: ssslm.Grounder) -> list[Author | Organization]:
-    return resolve_authors(attributes.get("authors", []), ror_grounder=ror_grounder)
+def _get_authors(
+    attributes: LearningMaterial, ror_grounder: ssslm.Grounder
+) -> Sequence[Author | Organization]:
+    return resolve_authors(attributes.authors or [], ror_grounder=ror_grounder)
 
 
 def get_tess_oers(
@@ -195,8 +190,8 @@ def get_tess_oers(
     if ror_grounder is None:
         ror_grounder = pyobo.get_grounder("ror")
     for material in client.get_materials():
-        attributes = material["attributes"]
-        doi = attributes["doi"]
+        attributes = material.attributes
+        doi = attributes.doi
         if doi:
             if not doi.strip() or " " in doi:
                 doi = None
@@ -207,10 +202,10 @@ def get_tess_oers(
             platform=client.key,
             derived_from=client.base_url + material["links"]["self"],
             external_uri=doi,
-            title={"en": attributes["title"].strip()},
+            title={"en": attributes.title.strip()},
             license=_get_license(attributes),
-            description={"en": attributes["description"].strip()},
-            keywords=[{"en": kw.strip()} for kw in attributes.get("keywords") or []],
+            description={"en": attributes.description.strip()},
+            keywords=[{"en": kw.strip()} for kw in attributes.keywords or []],
             date_published=attributes.get("date-published"),
             resource_types=_get_resource_types(attributes),
             difficulty_level=_get_difficulty_levels(attributes),
@@ -264,8 +259,8 @@ SPDX_GROUNDER = pyobo.get_grounder("spdx")
 license_counter: Counter[str] = Counter()
 
 
-def _get_license(attributes) -> URIRef | str | None:
-    license_text = attributes["licence"].lower().strip()
+def _get_license(attributes: LearningMaterial) -> URIRef | str | None:
+    license_text = attributes.licence.lower().strip()
     if license_text is None or license_text == "notspecified":
         return None
 
@@ -297,7 +292,8 @@ def main(include_description: bool) -> None:
         resources = get_tess_oers(
             client=client, include_description=include_description, ror_grounder=ror_grounder
         )
-        write_resources_jsonl(resources, DALIA_MODULE.join(name=f"{key}.json"))
+        path = OERBSERVATORY_MODULE.join("inputs", "tess", name=f"{key}.json")
+        write_resources_jsonl(resources, path=path)
 
     click.echo(tabulate(unknown_resource_type.most_common()))
     click.echo("")
