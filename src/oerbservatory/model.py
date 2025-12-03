@@ -101,7 +101,7 @@ class EducationalResource(BaseModel):
 
     file_size: ByteSize | None = Field(None, description="file size, in bytes")
     file_formats: list[str] = Field(default_factory=list, examples=[["pdf"], ["mp4"]])
-    xrefs: list[Reference] = Field(default_factory=list)
+    xrefs: list[Reference] | None = Field(None)
     logo: str | None = None
     version: str | None = None
 
