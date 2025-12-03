@@ -12,6 +12,7 @@ import ssslm
 from curies import Reference
 from dalia_dif.namespace import SPDX_LICENSE
 from dalia_dif.utils import cleanup_languages
+from pydantic_extra_types.language_code import LanguageAlpha2
 from rdflib import SDO, URIRef
 from tabulate import tabulate
 from tqdm import tqdm
@@ -101,6 +102,7 @@ def get_oerhub(*, organization_grounder: ssslm.Grounder | None = None) -> list[E
         # can be reconstructed with references
         source.pop("oea_object_direct_link", None)
 
+        title: InternationalizedStr | None
         title_1: list[InternationalizedStr] = general.pop("title")
         title_2: str | None = source.pop("oea_title", None)
         title_3: InternationalizedStr | None = source.pop("oea_title_ml", None)  # this is a dict
@@ -109,7 +111,7 @@ def get_oerhub(*, organization_grounder: ssslm.Grounder | None = None) -> list[E
         elif title_1:
             title = _clean_d(title_1[0])
         elif title_2:
-            title = {"de": title_2}
+            title = {LanguageAlpha2("de"): title_2}
         else:
             continue
 
@@ -123,8 +125,8 @@ def get_oerhub(*, organization_grounder: ssslm.Grounder | None = None) -> list[E
 
         keywords: list[InternationalizedStr] = [
             {
-                "en": x["name_en"],
-                "de": x["name_de"],
+                LanguageAlpha2("en"): x["name_en"],
+                LanguageAlpha2("de"): x["name_de"],
             }
             for x in source.pop("oea_classification_01")
         ]
@@ -203,13 +205,13 @@ def _echo_counter(c: Counter[str], title: str | None = None) -> None:
     tqdm.write(tabulate(c.most_common(), headers=["key", "count"]) + "\n\n")
 
 
-def _clean_d(d: dict[str, Any] | None) -> dict[str, str] | None:
+def _clean_d(d: InternationalizedStr | None) -> InternationalizedStr | None:
     if d is None:
         return None
     if "en" in d and "en_us_wp" in d:
-        del d["en_us_wp"]
+        del d[LanguageAlpha2("en_us_wp")]
         return d
-    return {"en" if k == "en_us_wp" else k: v for k, v in d.items()}
+    return {LanguageAlpha2("en") if k == "en_us_wp" else k: v for k, v in d.items()}
 
 
 @click.command()

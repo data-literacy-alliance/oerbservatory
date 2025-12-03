@@ -62,7 +62,7 @@ def parse(path: str | Path) -> list[EducationalResource]:
 def _get_minimum_proficiency_level(pl: Collection[URIRef] | None) -> URIRef | None:
     if not pl:
         return None
-    return min(pl, key=PROFICIENCY_TO_ORDER.get)
+    return min(pl, key=PROFICIENCY_TO_ORDER.__getitem__)
 
 
 REMAINING_LICENSES = {
@@ -70,7 +70,7 @@ REMAINING_LICENSES = {
 }
 
 
-def _process_license(license_uriref: URIRef | None) -> Reference | None:
+def _process_license(license_uriref: URIRef | None) -> Reference | None | URIRef:
     if license_uriref is None:
         return None
     if license_uriref in REMAINING_LICENSES:
