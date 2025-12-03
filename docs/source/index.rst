@@ -9,6 +9,7 @@ OERbservatory |release| Documentation
     installation
     usage
     cli
+    crosswalks
 
 Indices and Tables
 ------------------

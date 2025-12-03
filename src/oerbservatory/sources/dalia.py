@@ -29,8 +29,8 @@ from oerbservatory.sources.utils import OUTPUT_DIR
 
 __all__ = [
     "get_dalia",
+    "map_dalia_oer",
 ]
-
 
 ORCID_RE = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{3}(\d|X)$")
 
@@ -55,25 +55,26 @@ def parse(path: str | Path) -> list[EducationalResource]:
         ]
 
 
-def _convert(e: EducationalResourceDIF13) -> EducationalResource | None:
+def map_dalia_oer(dalia_oer: EducationalResourceDIF13) -> EducationalResource | None:
+    """Map a DALIA OER to an OERbservatory OER."""
     rv = EducationalResource(
-        reference=Reference(prefix="dalia.oer", identifier=str(e.uuid)),
-        external_uri=e.links,
-        title={EN: e.title},
-        description={EN: e.description},
-        keywords=[{EN: keyword} for keyword in e.keywords],
-        authors=[_process_author(a) for a in e.authors],
-        difficulty_level=e.proficiency_levels,
-        languages=e.languages,
-        license=e.license,
-        file_formats=e.file_formats,
-        date_published=e.publication_date,
-        version=e.version,
-        audience=e.target_groups,
-        file_size=_process_size(e.file_size),
-        resource_types=e.learning_resource_types,
-        media_types=e.media_types,
-        disciplines=e.disciplines,
+        reference=Reference(prefix="dalia.oer", identifier=str(dalia_oer.uuid)),
+        external_uri=dalia_oer.links,
+        title={EN: dalia_oer.title},
+        description={EN: dalia_oer.description},
+        keywords=[{EN: keyword} for keyword in dalia_oer.keywords],
+        authors=[_process_author(a) for a in dalia_oer.authors],
+        difficulty_level=dalia_oer.proficiency_levels,
+        languages=dalia_oer.languages,
+        license=dalia_oer.license,
+        file_formats=dalia_oer.file_formats,
+        date_published=dalia_oer.publication_date,
+        version=dalia_oer.version,
+        audience=dalia_oer.target_groups,
+        file_size=_process_size(dalia_oer.file_size),
+        resource_types=dalia_oer.learning_resource_types,
+        media_types=dalia_oer.media_types,
+        disciplines=dalia_oer.disciplines,
     )
     return rv
 
@@ -101,7 +102,7 @@ def _omni_process_row(path: Path, idx: int, row: dict[str, str]) -> EducationalR
     ed13 = parse_dif13_row(path.name, idx, row, future=True)
     if ed13 is None:
         return None
-    return _convert(ed13)
+    return map_dalia_oer(ed13)
 
 
 def get_dif13_paths() -> list[Path]:

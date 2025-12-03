@@ -24,6 +24,7 @@ from oerbservatory.model import EN, Author, EducationalResource, Organization, r
 __all__ = [
     "get_all_tess",
     "get_single_tess",
+    "map_tess_oer",
 ]
 
 TESS_LICENSE_DICTIONARY_URL = (
@@ -176,13 +177,13 @@ def _get_authors(
     return resolve_authors(attributes.authors or [], organization_grounder=organization_grounder)
 
 
-def oer_from_tess(
+def map_tess_oer(
     client: TeSSClient,
     material_wrapper: tess_downloader.LearningMaterialWrapper,
     *,
     organization_grounder: ssslm.Grounder,
 ) -> EducationalResource | None:
-    """Get an educational resource from TeSS."""
+    """Map a TeSS OER to an OERbservatory OER."""
     material = material_wrapper.attributes
     doi = material.doi
     if doi:
@@ -228,7 +229,7 @@ def get_single_tess(
         educational_resource
         for material in materials
         if (
-            educational_resource := oer_from_tess(
+            educational_resource := map_tess_oer(
                 client, material, organization_grounder=organization_grounder
             )
         )

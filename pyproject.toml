@@ -56,6 +56,10 @@ dependencies = [
     "dalia-dif",
     "tess-downloader>=0.0.5",
     "pystow>=0.7.12",
+    "pandas",
+    "orcid_downloader",
+    "pyobo[gilda-slim]",
+    "rdflib",
 ]
 
 # see https://peps.python.org/pep-0735/ and https://docs.astral.sh/uv/concepts/dependencies/#dependency-groups
@@ -66,13 +70,9 @@ tests = [
 ]
 docs = [
     "sphinx>=8",
-    "sphinx-rtd-theme>=3.0","sphinx-click", 
+    "sphinx-rtd-theme>=3.0",
+    "sphinx-click",
     "sphinx_automodapi",
-    # Include if your project uses Pydantic:
-    # "autodoc_pydantic",
-    # To include LaTeX comments easily in your docs.
-    # If you uncomment this, don't forget to do the same in docs/conf.py
-    # texext
 ]
 lint = [
     "ruff",
@@ -84,7 +84,6 @@ typing = [
     "click-types",
     "types-requests",
     "types-tabulate",
-    "orcid-downloader",
 ]
 docs-lint = [
     { include-group = "docs" },
