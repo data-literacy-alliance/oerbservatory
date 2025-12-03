@@ -72,6 +72,24 @@ def main() -> None:
 
     click.echo(f"got {len(concat_sources):,} resources")
 
+    tqdm.write("[ALL] calculating TF-IDF vectors")
+    start = time.time()
+    write_resources_tfidf(
+        concat_sources,
+        OUTPUT_DIR.joinpath("tfidf-index.tsv"),
+        OUTPUT_DIR.joinpath("tfidf-similarities.tsv"),
+    )
+    tqdm.write(f"output TF-IDF vectors to {OUTPUT_DIR} in {time.time() - start:.2f} seconds")
+
+    tqdm.write("calculating SBERT vectors")
+    start = time.time()
+    write_resources_sentence_transformer(
+        concat_sources,
+        OUTPUT_DIR.joinpath("transformers-index.tsv"),
+        OUTPUT_DIR.joinpath("transformers-similarities.tsv"),
+    )
+    tqdm.write(f"output SBERT vectors to {OUTPUT_DIR} in {time.time() - start:.2f} seconds")
+
 
 if __name__ == "__main__":
     main()
