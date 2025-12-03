@@ -61,6 +61,7 @@ LICENSES: dict[str, URIRef] = {
     "CC-BY-NC-ND-4.0": SPDX_LICENSE["CC-BY-NC-ND-4.0"],
     "CC-BY-NC-SA-4.0": SPDX_LICENSE["CC-BY-NC-SA-4.0"],
     "CC-BY-SA-2.0": SPDX_LICENSE["CC-BY-SA-2.0"],
+    "CC-BY-NC-SA-3.0": SPDX_LICENSE["CC-BY-NC-SA-3.0"],
 }
 
 RESOURCE_TYPES = {
@@ -103,13 +104,18 @@ def get_oerhub(*, organization_grounder: ssslm.Grounder | None = None) -> list[E
         source.pop("oea_object_direct_link", None)
 
         title: InternationalizedStr | None
-        title_1: list[InternationalizedStr] = general.pop("title")
+        title_1: list[InternationalizedStr] | None = [
+            x for t in general.pop("title", []) if (x := _clean_d(t))
+        ] or None
         title_2: str | None = source.pop("oea_title", None)
         title_3: InternationalizedStr | None = source.pop("oea_title_ml", None)  # this is a dict
         if title_3:
-            title = _clean_d(title_3)
+            title_3 = _clean_d(title_3)
+
+        if title_3:
+            title = title_3
         elif title_1:
-            title = _clean_d(title_1[0])
+            title = title_1[0]
         elif title_2:
             title = {LanguageAlpha2("de"): title_2}
         else:
@@ -211,6 +217,10 @@ def _clean_d(d: InternationalizedStr | None) -> InternationalizedStr | None:
     if "en" in d and "en_us_wp" in d:
         del d[LanguageAlpha2("en_us_wp")]
         return d
+    if "zxx" in d:  # no linguistic content
+        del d["zxx"]  # type:ignore
+    if not d:
+        return None
     return {LanguageAlpha2("en") if k == "en_us_wp" else k: v for k, v in d.items()}
 
 
