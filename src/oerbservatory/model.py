@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime
 import sqlite3
 import time
+import typing as t
 from collections.abc import Sequence
 from contextlib import closing
 from functools import lru_cache
@@ -21,7 +22,7 @@ import ssslm
 from curies import Reference
 from pydantic import UUID4, BaseModel, ByteSize, ConfigDict, Field
 from pydantic_extra_types.language_code import ISO639_3, LanguageAlpha2
-from rdflib import Literal, URIRef
+from rdflib import URIRef
 from tqdm import tqdm
 
 if TYPE_CHECKING:
@@ -64,11 +65,15 @@ class Organization(BaseModel):
 #: The english language code.
 EN = LanguageAlpha2("en")
 
+#: A dictionary from two-letter language codes to the value that goes with that language
 type InternationalizedStr = dict[LanguageAlpha2, str]
+
+#: Statues of an OER, borrowed from TeSS
+type Status = t.Literal["Archived", "Published", "Active", "Draft", "Development", "Under-Review"]
 
 
 class EducationalResource(BaseModel):
-    """Represents an educatioanl resource."""
+    """Represents an educational resource."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -105,8 +110,14 @@ class EducationalResource(BaseModel):
     logo: str | None = None
     version: str | None = None
 
+    published: datetime.datetime | None = None
+    modified: datetime.datetime | None = None
+    # TODO update TeSS I/O with this
+
     prerequisites: str | None = Field(None)
     learning_objectives: str | None = Field(None)
+
+    status: Status | None = None
 
     derived_from: str | None = Field(
         None,
@@ -132,10 +143,10 @@ class EducationalResource(BaseModel):
         if x is None:
             return None
         elif isinstance(x, str):
-            graph.add((node, predicate, Literal(x)))
+            graph.add((node, predicate, rdflib.Literal(x)))
         elif isinstance(x, dict):
             for lang, text in x.items():
-                graph.add((node, predicate, Literal(text, lang=lang)))
+                graph.add((node, predicate, rdflib.Literal(text, lang=lang)))
         else:
             raise TypeError
 
@@ -144,6 +155,8 @@ def write_resources_jsonl(resources: list[EducationalResource], path: Path) -> N
     """Write resources as a JSONL file."""
     with path.open("w") as file:
         for resource in resources:
+            if not isinstance(resource, BaseModel):
+                raise TypeError(f"should be a model: {type(resource)} {resource}")
             line = resource.model_dump_json(
                 exclude_none=True,
                 exclude_defaults=True,
