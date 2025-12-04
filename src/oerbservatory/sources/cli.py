@@ -24,11 +24,13 @@ def main() -> None:
     from oerbservatory.sources.dalia import get_dalia
     from oerbservatory.sources.oerhub import get_oerhub
     from oerbservatory.sources.tess import get_tess
+    from oerbservatory.sources.gtn import get_gtn
 
     source_getters: list[Callable[[], list[EducationalResource]]] = [
         get_tess,
         get_dalia,
         get_oerhub,
+        get_gtn,
         # get_oersi,
     ]
     concat_sources: list[EducationalResource] = []
