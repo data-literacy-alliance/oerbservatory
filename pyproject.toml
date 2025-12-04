@@ -84,6 +84,7 @@ typing = [
     "click-types",
     "types-requests",
     "types-tabulate",
+    "types-python-dateutil",
 ]
 docs-lint = [
     { include-group = "docs" },
