@@ -24,6 +24,7 @@ from curies import Reference
 from dalia_dif.namespace import HCRT, MODALIA, modalia
 from tabulate import tabulate
 from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 from oerbservatory.model import EducationalResource, write_resources_jsonl
 
@@ -104,7 +105,8 @@ def _process_material(  # noqa:C901
             res = requests.get(url, timeout=5)
             text = res.text
         else:
-            path = MODULE.ensure(url=url, name=f"{topic}-{topic_name}-tutorial.md")
+            with logging_redirect_tqdm():
+                path = MODULE.ensure(url=url, name=f"{topic}-{topic_name}-tutorial.md")
             text = path.read_text()
     except pystow.utils.DownloadError:
         tqdm.write(f"[{topic}-{topic_name}] was not able to download {url}")

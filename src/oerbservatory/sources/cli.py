@@ -91,7 +91,7 @@ def main(include_oersi: bool) -> None:
     start = time.time()
     write_resources_tfidf(
         concat_sources,
-        OUTPUT_DIR.joinpath("tfidf-index.tsv"),
+        OUTPUT_DIR.joinpath("tfidf-index.tsv.gz"),
         OUTPUT_DIR.joinpath("tfidf-similarities.tsv"),
     )
     tqdm.write(f"output TF-IDF vectors to {OUTPUT_DIR} in {time.time() - start:.2f} seconds")
