@@ -27,10 +27,8 @@
         <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff" style="max-width:100%;"></a>
     <a href="https://github.com/cthoyt/oerbservatory/blob/main/.github/CODE_OF_CONDUCT.md">
         <img src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg" alt="Contributor Covenant"/></a>
-    <!-- uncomment if you archive on zenodo
-    <a href="https://zenodo.org/badge/latestdoi/XXXXXX">
-        <img src="https://zenodo.org/badge/XXXXXX.svg" alt="DOI"></a>
-    -->
+    <a href="https://zenodo.org/badge/latestdoi/18346546">
+        <img src="https://zenodo.org/badge/18346546.svg" alt="DOI"></a>
 </p>
 
 Harmonization of open educational resource data models, schemata, and data.
