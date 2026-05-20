@@ -1,3 +1,17 @@
+# /// script
+# [tool.fair-mappings]
+# name = "TeSS to OERbservatory"
+# description = """Functionality in the OERbservatory Python package that converts from the
+# external ELIXIR Training eSupport System (TeSS) implicit data model to the OERbservatory's
+# internal data model."""
+# [tool.fair-mappings.subject_source]
+# id = "wikidata:Q109494708"
+# name = "ELIXIR Training eSupport System"
+# [tool.fair-mappings.object_source]
+# id = "wikidata:Q139858018"
+# name = "OERbservatory Data Model"
+# ///
+
 """Ingest TeSS.
 
 See data dictionaries at https://github.com/ElixirTeSS/TeSS/tree/master/config/dictionaries.

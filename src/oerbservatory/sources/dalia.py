@@ -1,7 +1,8 @@
 # /// script
 # [tool.fair-mappings]
 # name = "DALIA Interchange Format to OERbservatory"
-# description = "Functionality in the OERbservatory Python package that converts from the external DALIA Interchange Format (DIF) to the OERbservatory's internal data model."
+# description = """Functionality in the OERbservatory Python package that converts from the
+# external DALIA Interchange Format (DIF) to the OERbservatory's internal data model."""
 # [tool.fair-mappings.subject_source]
 # id = "wikidata:Q139858013"
 # name = "DALIA Interchange Format"
