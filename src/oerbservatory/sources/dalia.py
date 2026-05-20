@@ -1,3 +1,9 @@
+# /// script
+# [tool.fair-mappings]
+# subject_source = "wikidata:Q139858013"
+# object_source = "wikidata:Q139858018"
+# ///
+
 """Parse DALIA curation sheets."""
 
 import csv
