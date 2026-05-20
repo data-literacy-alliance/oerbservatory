@@ -6,6 +6,7 @@ See data dictionaries at https://github.com/ElixirTeSS/TeSS/tree/master/config/d
 from collections import Counter
 from collections.abc import Sequence
 from functools import lru_cache
+from typing import cast
 
 import bioregistry
 import click
@@ -13,7 +14,7 @@ import pyobo
 import pystow
 import ssslm
 import tess_downloader
-from curies import NamedReference, Reference, ReferenceTuple
+from curies import NamableReference, NamedReference, Reference, ReferenceTuple
 from dalia_dif.namespace import BIBO, HCRT, MODALIA
 from rdflib import SDO, URIRef
 from tabulate import tabulate
@@ -208,11 +209,11 @@ def map_tess_oer(
 def get_single_tess(
     client: TeSSClient,
     *,
-    organization_grounder: ssslm.Grounder | None = None,
+    organization_grounder: ssslm.Grounder[NamableReference] | None = None,
 ) -> list[EducationalResource]:
     """Get a TeSS graph."""
     if organization_grounder is None:
-        organization_grounder = pyobo.get_grounder("ror")
+        organization_grounder = cast(ssslm.Grounder[NamableReference], pyobo.get_grounder("ror"))
 
     try:
         materials = client.get_materials()
@@ -239,8 +240,8 @@ def _get_xrefs(material: tess_downloader.LearningMaterial) -> list[NamedReferenc
     rv: list[NamedReference] = []
     for t in material.scientific_topics:
         r: ReferenceTuple | None = bioregistry.get_default_converter().parse_uri(t.uri)
-        if r:
-            rv.append(r.to_pydantic(t.preferred_label))
+        if r is not None:
+            rv.append(r.to_pydantic(name=t.preferred_label))
     return rv
 
 
@@ -252,11 +253,11 @@ def _get_license(attributes: LearningMaterial) -> URIRef | str | None:
 
 def get_tess(
     *,
-    organization_grounder: ssslm.Grounder | None = None,
+    organization_grounder: ssslm.Grounder[NamableReference] | None = None,
 ) -> list[EducationalResource]:
     """Get processed OERs from all known TeSS instances."""
     if organization_grounder is None:
-        organization_grounder = pyobo.get_grounder("ror")
+        organization_grounder = cast(ssslm.Grounder[NamableReference], pyobo.get_grounder("ror"))
     resources = []
     for key in tqdm(INSTANCES, unit="instance", desc="[tess] processing"):
         client = TeSSClient(key=key)
@@ -273,7 +274,7 @@ def get_tess(
 def main() -> None:
     """Convert TeSS to DALIA."""
     organization_grounder = pyobo.get_grounder("ror")
-    get_tess(organization_grounder=organization_grounder)
+    get_tess(organization_grounder=organization_grounder)  # type:ignore[arg-type]
     click.echo(tabulate(unknown_resource_type.most_common()))
 
 

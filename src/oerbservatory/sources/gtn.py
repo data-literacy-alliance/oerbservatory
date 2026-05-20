@@ -36,7 +36,7 @@ MODULE = pystow.module("oerbservatory", "sources", "gtn")
 SITE_BASE = "https://training.galaxyproject.org/training-material"
 
 missing_field_counter: Counter[str] = Counter()
-examples = {}
+examples: dict[str, tuple[str, str, str]] = {}
 LEVEL_MAP = {
     "Advanced": MODALIA["Expert"],
     "Beginner": MODALIA["Beginner"],

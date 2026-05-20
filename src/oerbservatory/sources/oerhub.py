@@ -9,7 +9,7 @@ import pyobo
 import pystow
 import requests
 import ssslm
-from curies import Reference
+from curies import NamableReference, Reference
 from dalia_dif.namespace import SPDX_LICENSE
 from dalia_dif.utils import cleanup_languages
 from pydantic_extra_types.language_code import LanguageAlpha2
@@ -74,13 +74,15 @@ RESOURCE_TYPES = {
 }
 
 
-def get_oerhub(*, organization_grounder: ssslm.Grounder | None = None) -> list[EducationalResource]:  # noqa:C901
+def get_oerhub(  # noqa:C901
+    *, organization_grounder: ssslm.Grounder[NamableReference] | None = None
+) -> list[EducationalResource]:
     """Get processed OERs from OERhub."""
     data = get_oerhub_raw()
     hits = data["data"]["hits"]["hits"]
 
     if organization_grounder is None:
-        organization_grounder = pyobo.get_grounder("ror")
+        organization_grounder = cast(ssslm.Grounder[NamableReference], pyobo.get_grounder("ror"))
 
     mime_type_counter: Counter[str] = Counter()
     filetype_counter: Counter[str] = Counter()

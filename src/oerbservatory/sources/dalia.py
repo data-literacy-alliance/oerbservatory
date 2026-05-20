@@ -1,7 +1,10 @@
 # /// script
-# [tool.fair-mappings]
-# subject_source = "wikidata:Q139858013"
-# object_source = "wikidata:Q139858018"
+# [tool.fair-mappings.subject_source]
+# id = "wikidata:Q139858013"
+# name = "DALIA Interchange Format"
+# [tool.fair-mappings.object_source]
+# id = "wikidata:Q139858018"
+# name = "OERbservatory Data Model"
 # ///
 
 """Parse DALIA curation sheets."""
