@@ -1,8 +1,8 @@
 # /// script
 # [tool.fair-mappings]
 # name = "TeSS to OERbservatory"
-# description = """Functionality in the OERbservatory Python package that converts from the\
-# external ELIXIR Training eSupport System (TeSS) implicit data model to the OERbservatory's\
+# description = """Functionality in the OERbservatory Python package that converts from the \
+# external ELIXIR Training eSupport System (TeSS) implicit data model to the OERbservatory's \
 # internal data model."""
 # [tool.fair-mappings.subject_source]
 # id = "wikidata:Q109494708"
